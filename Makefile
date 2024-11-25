@@ -8,64 +8,28 @@ FRONTEND_DIR = ./front
 BACKEND_DIR = ./back
 DATABASE_URL = postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)
 
-# PM2 Ecosystem File (optional, if using one)
-PM2_CONFIG = ./pm2.config.js
+# PM2 Ecosystem File
+PM2_CONFIG = pm2.config.js
 
-# Start the database (PostgreSQL using Docker)
-start-db:
-	docker run --name $(DB_CONTAINER_NAME) -e POSTGRES_USER=$(DB_USER) -e POSTGRES_PASSWORD=$(DB_PASSWORD) -e POSTGRES_DB=$(DB_NAME) -p $(DB_PORT):5432 -d postgres:13
-
-# Stop and remove the database
-stop-db:
-	docker stop $(DB_CONTAINER_NAME) && docker rm $(DB_CONTAINER_NAME)
-
-# Start the backend (NestJS) using PM2
-start-backend:
-	cd $(BACKEND_DIR) && pm2 start dist/main.js --name backend --env development --update-env --merge-logs
-
-# Run Prisma migrations (if using Prisma in the backend)
-migrate-backend:
-	export DATABASE_URL=$(DATABASE_URL) && cd $(BACKEND_DIR) && npx prisma migrate dev
-
-# Start the frontend (Next.js) using PM2
-start-frontend:
-	pm2 start npm --name frontend -- run dev --prefix $(FRONTEND_DIR)
-
-# Build the frontend (Next.js for production testing)
-build-frontend:
-	cd $(FRONTEND_DIR) && npm run build && npm run start
-
-# Stop the backend using PM2
-stop-backend:
-	pm2 stop backend || echo "Backend not running."
-
-# Stop the frontend using PM2
-stop-frontend:
-	pm2 stop frontend || echo "Frontend not running."
-
-# Start everything together using PM2
+# Start all processes with hot reload, including database
 start:
-	make start-db
-	make start-backend
-	make start-frontend
+	pm2 start $(PM2_CONFIG)
 
-# Stop everything using PM2
+# Stop all processes
 stop:
-	make stop-backend
-	make stop-frontend
-	make stop-db
+	pm2 stop all
 
-# Restart everything using PM2
+# Restart all processes
 restart:
-	pm2 restart all || echo "No PM2 services running."
+	pm2 restart all
 
 # Monitor PM2 processes
 monitor:
 	pm2 monit
 
-# Save the PM2 process list for auto-restart on reboot
-save-pm2:
-	pm2 save
+# View logs for all processes
+logs:
+	pm2 logs
 
 # View logs for the backend
 logs-backend:
@@ -75,13 +39,22 @@ logs-backend:
 logs-frontend:
 	pm2 logs frontend
 
-# View all PM2 logs
-logs:
-	pm2 logs
-
 # Delete all PM2-managed applications
 delete:
 	pm2 delete all
+
+# Start the database using PM2
+start-db:
+	pm2 start $(PM2_CONFIG) --only database
+
+# Stop and remove the database container
+stop-db:
+	docker stop $(DB_CONTAINER_NAME) && docker rm $(DB_CONTAINER_NAME) || echo "Database container not running."
+
+# Run Prisma migrations (if using Prisma in the backend)
+migrate-backend:
+	export DATABASE_URL=$(DATABASE_URL) && \
+	cd $(BACKEND_DIR) && npx prisma migrate dev
 
 # Lint backend (NestJS)
 lint-backend:

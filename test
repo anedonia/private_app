@@ -1,0 +1,37 @@
+# Variables
+REPO_NAME = personal_website
+IMAGE_TAG = latest
+COMPOSE_FILE_LOCAL = docker-compose-local.yml
+
+# Docker service names in docker-compose.yml
+DOCKER_SERVICES = website-frontend website-backend
+
+
+
+# Default target
+.DEFAULT_GOAL := help
+
+# Makefile Targets
+
+
+# Build Docker images using Docker Compose
+build:
+	docker compose -f $(COMPOSE_FILE) build
+
+up:
+	docker compose -f $(COMPOSE_FILE_LOCAL) up
+
+down:
+	docker compose -f $(COMPOSE_FILE_LOCAL) down
+
+
+# Display help for the available targets
+help:
+	@echo "Available targets:"
+	@echo "  build        Build Docker images using Docker Compose"
+	@echo "  tag          Tag Docker images with the ECR URI"
+	@echo "  push         Push Docker images to Amazon ECR"
+	@echo "  deploy       Deploy services to ECS using ECS CLI"
+	@echo "  ecr-login    Authenticate Docker to AWS ECR"
+	@echo "  help         Display this help message"
+
